@@ -12,3 +12,7 @@ mkdir -p "$sculpt_build"
 "$sculpt_cxx" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
   "${sculpt_root}/Tests/live_clean_test.cpp" -o "${sculpt_build}/live_clean_test"
 "${sculpt_build}/live_clean_test"
+
+"$sculpt_cxx" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+  "${sculpt_root}/Tests/source_extractor_test.cpp" -o "${sculpt_build}/source_extractor_test"
+"${sculpt_build}/source_extractor_test"

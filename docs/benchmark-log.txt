@@ -1,6 +1,12 @@
-1 stereo / Hold: mean 45.0976 us, p99 194.094 us, max 1131.37 us; CPU mean 46.1193 us
-8 stereo / Hold: mean 339.298 us, p99 739.816 us, max 1918.34 us; CPU mean 340.244 us
-16 stereo / Hold: mean 1567.92 us, p99 21099.1 us, max 88090.3 us; CPU mean 1573.23 us
-1 stereo / Auto: mean 63.0233 us, p99 292.829 us, max 5849.12 us; CPU mean 63.8227 us
-8 stereo / Auto: mean 863.055 us, p99 10222.4 us, max 74496 us; CPU mean 865.429 us
-16 stereo / Auto: mean 1219.73 us, p99 7700.33 us, max 41991.5 us; CPU mean 1220.53 us
+1 stereo / Hold / Source off: mean 61.9319 us, p99 472.165 us, max 3038.02 us; CPU mean 62.6327 us
+1 stereo / Hold / Source on: mean 81.2428 us, p99 626.234 us, max 7853.14 us; CPU mean 81.8793 us
+8 stereo / Hold / Source off: mean 557.422 us, p99 3542.54 us, max 32148.1 us; CPU mean 559.373 us
+8 stereo / Hold / Source on: mean 770.06 us, p99 5779.5 us, max 54526.9 us; CPU mean 771.629 us
+16 stereo / Hold / Source off: mean 1853.36 us, p99 17932.5 us, max 48058.8 us; CPU mean 1856.89 us
+16 stereo / Hold / Source on: mean 2443.24 us, p99 22578.8 us, max 90385.6 us; CPU mean 2456.62 us
+1 stereo / Auto / Source off: mean 69.4925 us, p99 619.01 us, max 5115.83 us; CPU mean 70.0193 us
+1 stereo / Auto / Source on: mean 157.362 us, p99 1423.51 us, max 35584.3 us; CPU mean 173.396 us
+8 stereo / Auto / Source off: mean 793.192 us, p99 5505.4 us, max 25180.2 us; CPU mean 796.799 us
+8 stereo / Auto / Source on: mean 1024.02 us, p99 7915.44 us, max 50470.3 us; CPU mean 1030.33 us
+16 stereo / Auto / Source off: mean 1763.43 us, p99 17529 us, max 77935.8 us; CPU mean 1765.91 us
+16 stereo / Auto / Source on: mean 5000.08 us, p99 60547.9 us, max 194040 us; CPU mean 5025.82 us

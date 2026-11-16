@@ -5,6 +5,7 @@
 namespace
 {
 const juce::Colour cream { 0xfff2ead2 }, warm { 0xffe8935a }, amber { 0xfff0c060 }, cool { 0xff5fc8c0 };
+const juce::Colour sourceColour { 0xffb9a0e8 };
 const std::array<juce::Colour, 3> accents { warm, amber, cool };
 constexpr float startAngle = juce::MathConstants<float>::pi * 1.25f;
 constexpr float endAngle = juce::MathConstants<float>::pi * 2.75f;
@@ -53,8 +54,9 @@ void SculptLiveCleanLookAndFeel::drawRotarySlider (juce::Graphics& graphics, int
     graphics.fillPath (tick, juce::AffineTransform::rotation (a0 + position * (a1 - a0)).translated (centre.x, centre.y));
 
     const bool isOutput = slider.getName() == "Output";
-    const auto text = isOutput ? juce::String (slider.getValue(), 1) : juce::String (static_cast<int> (std::lround (slider.getValue())));
-    graphics.setFont (juce::Font (juce::FontOptions (isOutput ? 13.0f : 25.0f)));
+    const bool isDecibels = isOutput || slider.getName() == "Source Threshold";
+    const auto text = isDecibels ? juce::String (slider.getValue(), 1) : juce::String (static_cast<int> (std::lround (slider.getValue())));
+    graphics.setFont (juce::Font (juce::FontOptions (isOutput ? 13.0f : (width < 100 ? 18.0f : 25.0f))));
     graphics.setColour (cream);
     graphics.drawText (text, bounds, juce::Justification::centred);
 }
@@ -62,8 +64,11 @@ void SculptLiveCleanLookAndFeel::drawRotarySlider (juce::Graphics& graphics, int
 SculptLiveCleanEditor::SculptLiveCleanEditor (SculptLiveCleanProcessor& p)
     : AudioProcessorEditor (&p), processor (p),
       outputAttachment (p.apvts, "output", output),
+      sourceThresholdAttachment (p.apvts, "sourceThreshold", sourceThreshold),
+      sourceDepthAttachment (p.apvts, "sourceDepth", sourceDepth),
       holdAttachment (p.apvts, "feedbackHold", hold),
-      bypassAttachment (p.apvts, "bypass", bypass)
+      bypassAttachment (p.apvts, "bypass", bypass),
+      sourceEnabledAttachment (p.apvts, "sourceEnabled", sourceEnabled)
 {
     setLookAndFeel (&look);
     const std::array<const char*, 3> ids { "denoise", "dereverb", "defeedback" };
@@ -98,6 +103,26 @@ SculptLiveCleanEditor::SculptLiveCleanEditor (SculptLiveCleanProcessor& p)
     output.setPopupDisplayEnabled (true, false, this);
     addAndMakeVisible (output);
 
+    sourceThreshold.setName ("Source Threshold");
+    sourceDepth.setName ("Source Depth");
+    for (auto* slider : { &sourceThreshold, &sourceDepth })
+    {
+        slider->setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+        slider->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        slider->setRotaryParameters (startAngle, endAngle, true);
+        slider->setColour (juce::Slider::rotarySliderFillColourId, sourceColour);
+        slider->setPopupDisplayEnabled (true, false, this);
+        addAndMakeVisible (*slider);
+    }
+    sourceThreshold.setTextValueSuffix (" dBFS");
+    sourceThreshold.setDoubleClickReturnValue (true, -32.0);
+    sourceThreshold.setTooltip ("Soglia del Source Extractor sul livello di ingresso. Alzala finché i rientri scendono nelle pause. Doppio clic: -32 dBFS.");
+    sourceDepth.setTextValueSuffix (" %");
+    sourceDepth.setDoubleClickReturnValue (true, 50.0);
+    sourceDepth.setTooltip ("Massima attenuazione nelle pause: 0–48 dB. 50% = 24 dB. A 0% il modulo è neutro. Doppio clic: 50%.");
+    sourceEnabled.setClickingTogglesState (true);
+    sourceEnabled.setTooltip ("Source Extractor derivato dal Source Enhancer della Strip: apertura 2 ms, hold 60 ms, chiusura 180 ms. Riduce i rientri sotto soglia; stereo collegato.");
+
     hold.setClickingTogglesState (true);
     bypass.setClickingTogglesState (true);
     hold.setTooltip ("AUTO: aggiunge filtri sui picchi persistenti. HOLD: conserva i filtri trovati, senza aggiungerne altri.");
@@ -106,10 +131,10 @@ SculptLiveCleanEditor::SculptLiveCleanEditor (SculptLiveCleanProcessor& p)
     reset.setTooltip ("Rimuove gradualmente tutti i filtri antifeedback. HOLD evita che vengano ricreati subito.");
     learn.onClick = [this] { processor.requestNoiseLearn(); };
     reset.onClick = [this] { processor.requestFeedbackReset(); };
-    for (auto* button : { &learn, &hold, &reset, &bypass }) addAndMakeVisible (*button);
+    for (auto* button : { &learn, &hold, &reset, &bypass, &sourceEnabled }) addAndMakeVisible (*button);
 
     setOpaque (true);
-    setSize (800, 460);
+    setSize (800, 600);
     startTimerHz (25);
     timerCallback();
 }
@@ -128,7 +153,10 @@ void SculptLiveCleanEditor::resized()
     hold.setBounds (555, 280, 110, 28);
     reset.setBounds (675, 280, 90, 28);
     bypass.setBounds (678, 15, 102, 25);
-    output.setBounds (666, 377, 68, 68);
+    sourceThreshold.setBounds (286, 400, 84, 84);
+    sourceDepth.setBounds (438, 400, 84, 84);
+    sourceEnabled.setBounds (578, 392, 172, 28);
+    output.setBounds (666, 517, 68, 68);
 }
 
 void SculptLiveCleanEditor::timerCallback()
@@ -141,6 +169,8 @@ void SculptLiveCleanEditor::timerCallback()
     hold.setButtonText (hold.getToggleState() ? "HOLD" : "AUTO");
     hold.setColour (juce::TextButton::textColourOffId, amber);
     bypass.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xff784329));
+    sourceEnabled.setButtonText (sourceEnabled.getToggleState() ? "SOURCE ON" : "SOURCE OFF");
+    sourceEnabled.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xff514167));
     repaint();
 }
 
@@ -225,9 +255,28 @@ void SculptLiveCleanEditor::paint (juce::Graphics& graphics)
         graphics.drawText (frequencyText (hz), x, y, 70, 18, juce::Justification::centred);
     }
 
-    drawMeter (graphics, { 55.0f, 390.0f, 480.0f, 10.0f }, inputLevel, "IN");
-    drawMeter (graphics, { 55.0f, 417.0f, 480.0f, 10.0f }, outputLevel, "OUT");
+    graphics.setColour (juce::Colour (0xff191919));
+    graphics.fillRoundedRectangle (20.0f, 374.0f, 760.0f, 132.0f, 8.0f);
+    graphics.setColour (sourceColour);
+    graphics.setFont (juce::Font (juce::FontOptions (13.0f)));
+    graphics.drawText ("SOURCE EXTRACTOR", 36, 389, 220, 20, juce::Justification::centredLeft);
+    graphics.setColour (cream.withAlpha (0.65f));
+    graphics.setFont (juce::Font (juce::FontOptions (11.0f)));
+    graphics.drawFittedText ("Riduce i rientri quando\nla sorgente si ferma.", 36, 420, 210, 44, juce::Justification::centredLeft, 2);
+    graphics.drawText ("THRESHOLD", 266, 382, 124, 18, juce::Justification::centred);
+    graphics.drawText ("DEPTH", 418, 382, 124, 18, juce::Justification::centred);
+    graphics.drawText ("dBFS", 266, 484, 124, 16, juce::Justification::centred);
+    graphics.drawText ("MAX " + juce::String (sourceDepth.getValue() * 0.48, 1) + " dB", 418, 484, 124, 16, juce::Justification::centred);
+    const float sourceGr = juce::jlimit (0.0f, 48.0f, processor.display.sourceReductionDb.load (std::memory_order_relaxed));
+    graphics.drawText ("RIDUZIONE  " + juce::String (sourceGr, 1) + " dB", 568, 433, 192, 20, juce::Justification::centred);
+    graphics.setColour (juce::Colour (0xff292929));
+    graphics.fillRoundedRectangle (578.0f, 466.0f, 172.0f, 8.0f, 3.0f);
+    graphics.setColour (sourceColour);
+    graphics.fillRoundedRectangle (578.0f, 466.0f, 172.0f * sourceGr / 48.0f, 8.0f, 3.0f);
+
+    drawMeter (graphics, { 55.0f, 530.0f, 480.0f, 10.0f }, inputLevel, "IN");
+    drawMeter (graphics, { 55.0f, 557.0f, 480.0f, 10.0f }, outputLevel, "OUT");
     graphics.setColour (cream.withAlpha (0.65f));
     graphics.setFont (juce::Font (juce::FontOptions (10.0f)));
-    graphics.drawText ("OUTPUT dB", 645, 443, 110, 14, juce::Justification::centred);
+    graphics.drawText ("OUTPUT dB", 645, 583, 110, 14, juce::Justification::centred);
 }

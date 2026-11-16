@@ -1,0 +1,29 @@
+SCULPT LIVE CLEAN — SOURCE EXTRACTOR
+
+Codice originale Sculpt CH Strip: Copyright 2026 Sculpt.
+Gain computer soft-knee adattato da SoundCraft DSP, ArtCraft Team,
+MIT/Apache-2.0. Testi delle licenze conservati in SoundCraft-MIT.txt e
+SoundCraft-APACHE.txt nella stessa cartella.
+
+Riferimento richiesto dall'utente: Source Enhancer di Sculpt CH Strip.
+Repository: https://github.com/mrgianluca990-bit/SculptDAW
+Commit: 081a7b851b9ebb41fa8c53d7f2335f0abe007b36
+Codice: crates/sculpt-strip/src/processor.rs, sezione gate e compress_gr;
+crates/sculpt-strip/src/util.rs, conversioni di livello e coefficienti.
+Parametri originali: crates/sculpt-strip/vendor/REFERENCE-SculptCHStrip.cpp.
+
+Port C++17 per Sculpt Live Clean 0.2.0:
+- Conserva curva originale, ginocchio 6 dB, limite Depth*48 dB,
+  rilevatore stereo max, tempi 5/2/180 ms, hold 60 ms e isteresi 2 dB.
+- Il gain computer originale usa la pendenza 1 - 1/4 = 0,75 sotto soglia.
+  Non viene sostituito con la pendenza 3 di un expander convenzionale 4:1.
+- Conserva lo smoothing dei parametri di 20 ms.
+- Calcola i coefficienti costanti nella preparazione, senza dipendenze Rust.
+- Aggiunge controlli sui valori non finiti e ritorno esatto a neutralità.
+- Sospende il calcolo e azzera la storia quando Off/Depth zero sono raggiunti.
+- Il rilevatore usa l'ingresso originale di Live Clean; il guadagno agisce
+  dopo gli altri trattamenti e prima del trim di uscita.
+
+Il modulo è un attenuatore dinamico sotto soglia, non un separatore neurale
+di sorgenti e non contiene codice proprietario di prodotti denominati
+Source Extractor di altri produttori.

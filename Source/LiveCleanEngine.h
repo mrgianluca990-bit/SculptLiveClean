@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FeedbackSuppressor.h"
+#include "SourceExtractor.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -16,6 +17,9 @@ struct Parameters {
     float outputGain = 1.0f;
     bool feedbackHold = true;
     bool bypass = false;
+    float sourceThresholdDb = -32.0f;
+    float sourceDepth = 0.5f;
+    bool sourceEnabled = false;
 };
 
 struct Meters {
@@ -28,6 +32,7 @@ struct Meters {
     float noiseLearnProgress = 0.0f;
     int activeNotches = 0;
     std::array<float, 6> feedbackFrequencies{};
+    float sourceReductionDb = 0.0f;
 };
 
 // A host may copy this plain state to its project file. Restore runs on the
@@ -74,6 +79,7 @@ public:
         guardSamples_ = std::max(1, static_cast<int>(rate_ * 0.025));
         learnTotal_ = std::max(1, static_cast<int>(std::lround(rate_ * 2.0)));
         feedback_.prepare(rate_, channelCount_);
+        source_.prepare(rate_);
         reset();
     }
 
@@ -92,6 +98,8 @@ public:
         feedback_.reset();
         feedback_.setAmount(target_.defeedback);
         feedback_.setHold(target_.feedbackHold);
+        source_.setParameters(target_.sourceThresholdDb, target_.sourceDepth, target_.sourceEnabled);
+        source_.reset();
     }
 
     void setParameters(const Parameters& parameters) {
@@ -101,8 +109,12 @@ public:
         setFinite(target_.outputGain, parameters.outputGain, 0.0f, 4.0f);
         target_.feedbackHold = parameters.feedbackHold;
         target_.bypass = parameters.bypass;
+        setFinite(target_.sourceThresholdDb, parameters.sourceThresholdDb, -60.0f, 0.0f);
+        setFinite(target_.sourceDepth, parameters.sourceDepth, 0.0f, 1.0f);
+        target_.sourceEnabled = parameters.sourceEnabled;
         feedback_.setAmount(target_.defeedback);
         feedback_.setHold(target_.feedbackHold);
+        source_.setParameters(target_.sourceThresholdDb, target_.sourceDepth, target_.sourceEnabled);
     }
 
     // Capture two seconds of noise-only input. The stored profile is then
@@ -211,6 +223,7 @@ public:
             }
             float processedL = checkedFloat(cleanL), processedR = checkedFloat(cleanR);
             feedback_.processSample(processedL, processedR, activeChannels);
+            source_.processSample(processedL, processedR, rawL, rawR, activeChannels);
             processedL = checkedFloat(static_cast<double>(processedL) * current_.outputGain);
             processedR = checkedFloat(static_cast<double>(processedR) * current_.outputGain);
             const float outL = wet_ == 0.0f ? rawL : (wet_ == 1.0f ? processedL
@@ -308,9 +321,11 @@ private:
             ? wet_ * static_cast<float>(std::max(0.0, -10.0 * std::log10(std::max(1.0e-12, afterTail / afterNoise)))) : 0.0f;
         meters_.activeNotches = feedback_.activeCount();
         meters_.feedbackFrequencies = feedback_.frequencies();
+        meters_.sourceReductionDb = wet_ * source_.getReductionDb();
     }
 
     FeedbackSuppressor feedback_;
+    SourceExtractor source_;
     Parameters target_{}, current_{};
     Meters meters_{};
     double rate_ = 48000.0;

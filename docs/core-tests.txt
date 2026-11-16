@@ -14,3 +14,13 @@ PASS: block-size independence
 PASS: sample rates, reset and nonfinite input
 PASS: no audio-thread allocations
 All 10 Sculpt Live Clean core checks passed.
+Reference maximum absolute sample error: 3.72489e-09
+PASS: original Strip reference at six sample rates
+PASS: depth floor and direct-source reopening
+PASS: hold, linked stereo and raw-input detection
+PASS: smooth automation, neutral endpoints and no sample delay
+PASS: reset and invalid input/parameter handling
+PASS: denoise interaction and global bypass
+PASS: block-size independence
+PASS: no audio-thread allocations
+All 8 Source Extractor checks passed.

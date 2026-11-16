@@ -5,7 +5,7 @@ if(CMAKE_HOST_APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 endif()
 
-project(SculptLiveClean VERSION 0.1.0 LANGUAGES C CXX)
+project(SculptLiveClean VERSION 0.2.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,7 @@ juce_add_plugin(SculptLiveClean
 
 target_sources(SculptLiveClean PRIVATE
   Source/LiveCleanEngine.h
+  Source/SourceExtractor.h
   Source/FeedbackSuppressor.h
   Source/PluginProcessor.h
   Source/PluginProcessor.cpp
@@ -56,3 +57,14 @@ target_link_libraries(SculptLiveClean
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags)
+
+option(SCULPT_BUILD_STATE_TESTS "Build the JUCE state and host-bypass checks" OFF)
+if(SCULPT_BUILD_STATE_TESTS)
+  enable_testing()
+  juce_add_console_app(SculptLiveCleanStateTests PRODUCT_NAME "SculptLiveCleanStateTests")
+  target_sources(SculptLiveCleanStateTests PRIVATE Tests/plugin_state_test.cpp)
+  target_include_directories(SculptLiveCleanStateTests PRIVATE Source)
+  target_link_libraries(SculptLiveCleanStateTests PRIVATE
+    SculptLiveClean juce::juce_audio_processors)
+  add_test(NAME plugin-state COMMAND $<TARGET_FILE:SculptLiveCleanStateTests>)
+endif()

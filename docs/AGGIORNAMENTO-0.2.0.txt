@@ -1,0 +1,35 @@
+SCULPT LIVE CLEAN 0.2.0 — SOURCE EXTRACTOR
+
+COME APPLICARE QUESTO AGGIORNAMENTO
+Repository: mrgianluca990-bit/SculptLiveClean, branch main.
+Base verificata: 074a920ec2009aeb1c3ae6501da0b76daf531094.
+
+1. Estrai SculptLiveClean-0.2.0-aggiornamento.zip.
+2. Carica i file e le cartelle nella radice del repository, mantenendo i
+   percorsi e sostituendo i file omonimi. Non caricare soltanto lo ZIP.
+3. Conferma il commit su main. Il workflow esistente si avvia al push.
+4. In Actions apri Build macOS VST3; a esito riuscito scarica l'artefatto
+   Sculpt-Live-Clean-macOS-VST3.
+
+Il workflow è incluso anche qui nel percorso corretto:
+.github/workflows/build-macos-vst3.yml
+È identico a quello già corretto nel repository; non richiede modifiche.
+
+Il pacchetto include soltanto file nuovi/modificati e il workflow.
+Gli altri file della versione 0.1.0 restano necessari nel repository.
+
+NUOVA FUNZIONE
+Source Extractor deriva dal Source Enhancer di Sculpt CH Strip.
+Controlli: Threshold, Depth, Source On/Off, indicatore di riduzione.
+Default: Source Off, soglia -32 dBFS, Depth 50% (fino a 24 dB).
+Regola la soglia sulle parti deboli della sorgente; i rientri devono
+scendere soprattutto nelle pause. Depth determina il limite del taglio.
+La funzione attenua sotto soglia e non separa sorgenti sovrapposte.
+
+VERIFICHE
+18 gruppi DSP passati; processor/editor e test di stato verificati
+sintatticamente con i veri header JUCE 8.0.4.
+La nuova build macOS esegue anche i test di stato e il benchmark
+Source Off/On su 1, 8 e 16 istanze, prima di creare il VST3.
+Questa consegna è sorgente: non contiene un VST3 0.2.0 già compilato.
+Rapporto locale dettagliato: docs/VERIFICA.txt.

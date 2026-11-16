@@ -23,6 +23,7 @@ configure_args=(
   -B "$sculpt_build"
   -G "Unix Makefiles"
   -DCMAKE_BUILD_TYPE=Release
+  -DSCULPT_BUILD_STATE_TESTS=ON
   '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
   -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
 )
@@ -32,6 +33,8 @@ fi
 
 cmake "${configure_args[@]}"
 cmake --build "$sculpt_build" --config Release --target SculptLiveClean_VST3 --parallel "$sculpt_jobs"
+cmake --build "$sculpt_build" --config Release --target SculptLiveCleanStateTests --parallel "$sculpt_jobs"
+ctest --test-dir "$sculpt_build" --build-config Release --output-on-failure -R '^plugin-state$'
 
 sculpt_bundle="${sculpt_build}/SculptLiveClean_artefacts/Release/VST3/Sculpt Live Clean.vst3"
 sculpt_binary="${sculpt_bundle}/Contents/MacOS/Sculpt Live Clean"

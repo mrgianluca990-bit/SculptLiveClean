@@ -28,10 +28,14 @@ private:
     SculptLiveCleanLookAndFeel look;
     std::array<juce::Slider, 3> amounts;
     juce::Slider output;
+    juce::Slider sourceThreshold, sourceDepth;
     juce::TextButton learn { "Apprendi rumore" }, hold { "HOLD" }, reset { "Reset" }, bypass { "BYPASS" };
+    juce::TextButton sourceEnabled { "SOURCE OFF" };
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 3> amountAttachments;
     juce::AudioProcessorValueTreeState::SliderAttachment outputAttachment;
+    juce::AudioProcessorValueTreeState::SliderAttachment sourceThresholdAttachment, sourceDepthAttachment;
     juce::AudioProcessorValueTreeState::ButtonAttachment holdAttachment, bypassAttachment;
+    juce::AudioProcessorValueTreeState::ButtonAttachment sourceEnabledAttachment;
     juce::TooltipWindow tooltip { this, 650 };
     float inputLevel = 0.0f, outputLevel = 0.0f;
 

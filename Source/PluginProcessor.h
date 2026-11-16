@@ -46,6 +46,7 @@ public:
     {
         std::atomic<float> inputPeak { 0.0f }, outputPeak { 0.0f };
         std::atomic<float> denoiseReductionDb { 0.0f }, dereverbReductionDb { 0.0f };
+        std::atomic<float> sourceReductionDb { 0.0f };
         std::atomic<float> noiseLearnProgress { 0.0f };
         std::atomic<bool> noiseLearning { false }, noiseProfileReady { false };
         std::atomic<int> activeNotches { 0 };
@@ -103,6 +104,9 @@ private:
     std::atomic<float>* outputParameter = nullptr;
     std::atomic<float>* holdParameter = nullptr;
     std::atomic<float>* bypassParameter = nullptr;
+    std::atomic<float>* sourceThresholdParameter = nullptr;
+    std::atomic<float>* sourceDepthParameter = nullptr;
+    std::atomic<float>* sourceEnabledParameter = nullptr;
     std::atomic<std::uint64_t> learnRequestGeneration { 0 }, resetRequestGeneration { 0 };
     std::uint64_t consumedLearnGeneration = 0, consumedResetGeneration = 0; // Audio/lifecycle thread only.
 

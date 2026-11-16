@@ -73,6 +73,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout SculptLiveCleanProcessor::cr
         AudioParameterFloatAttributes().withLabel ("dB")));
     parameters.add (std::make_unique<AudioParameterBool> (ParameterID { "feedbackHold", 1 }, "Feedback Hold", true));
     parameters.add (std::make_unique<AudioParameterBool> (ParameterID { "bypass", 1 }, "Bypass", false));
+    // Append new controls so the original host parameter indices stay stable.
+    parameters.add (std::make_unique<AudioParameterFloat> (
+        ParameterID { "sourceThreshold", 2 }, "Source Threshold", NormalisableRange<float> (-60.0f, 0.0f, 0.1f), -32.0f,
+        AudioParameterFloatAttributes().withLabel ("dB")));
+    parameters.add (std::make_unique<AudioParameterFloat> (
+        ParameterID { "sourceDepth", 2 }, "Source Depth", NormalisableRange<float> (0.0f, 100.0f, 0.1f), 50.0f, percent));
+    parameters.add (std::make_unique<AudioParameterBool> (ParameterID { "sourceEnabled", 2 }, "Source Enabled", false));
     return parameters;
 }
 
@@ -88,6 +95,9 @@ SculptLiveCleanProcessor::SculptLiveCleanProcessor()
     outputParameter = apvts.getRawParameterValue ("output");
     holdParameter = apvts.getRawParameterValue ("feedbackHold");
     bypassParameter = apvts.getRawParameterValue ("bypass");
+    sourceThresholdParameter = apvts.getRawParameterValue ("sourceThreshold");
+    sourceDepthParameter = apvts.getRawParameterValue ("sourceDepth");
+    sourceEnabledParameter = apvts.getRawParameterValue ("sourceEnabled");
     clearDisplay();
     setLatencySamples (0);
 }
@@ -108,6 +118,9 @@ sculptliveclean::Parameters SculptLiveCleanProcessor::readParameters (bool hostB
     result.outputGain = juce::Decibels::decibelsToGain (outputParameter->load (std::memory_order_relaxed));
     result.feedbackHold = holdParameter->load (std::memory_order_relaxed) >= 0.5f;
     result.bypass = hostBypass || bypassParameter->load (std::memory_order_relaxed) >= 0.5f;
+    result.sourceThresholdDb = sourceThresholdParameter->load (std::memory_order_relaxed);
+    result.sourceDepth = sourceDepthParameter->load (std::memory_order_relaxed) * 0.01f;
+    result.sourceEnabled = sourceEnabledParameter->load (std::memory_order_relaxed) >= 0.5f;
     return result;
 }
 
@@ -188,6 +201,7 @@ void SculptLiveCleanProcessor::clearDisplay() noexcept
     display.outputPeak.store (0.0f, std::memory_order_relaxed);
     display.denoiseReductionDb.store (0.0f, std::memory_order_relaxed);
     display.dereverbReductionDb.store (0.0f, std::memory_order_relaxed);
+    display.sourceReductionDb.store (0.0f, std::memory_order_relaxed);
     display.noiseLearnProgress.store (0.0f, std::memory_order_relaxed);
     display.noiseLearning.store (false, std::memory_order_relaxed);
     display.noiseProfileReady.store (false, std::memory_order_relaxed);
@@ -202,6 +216,7 @@ void SculptLiveCleanProcessor::publishMeters() noexcept
     display.outputPeak.store (meters.outputPeak, std::memory_order_relaxed);
     display.denoiseReductionDb.store (meters.denoiseReductionDb, std::memory_order_relaxed);
     display.dereverbReductionDb.store (meters.dereverbReductionDb, std::memory_order_relaxed);
+    display.sourceReductionDb.store (meters.sourceReductionDb, std::memory_order_relaxed);
     display.noiseLearnProgress.store (meters.noiseLearnProgress, std::memory_order_relaxed);
     display.noiseLearning.store (meters.noiseLearning, std::memory_order_relaxed);
     display.noiseProfileReady.store (meters.noiseProfileReady, std::memory_order_relaxed);
@@ -293,7 +308,7 @@ void SculptLiveCleanProcessor::getStateInformation (juce::MemoryBlock& data)
     }
 
     auto state = apvts.copyState();
-    state.setProperty ("schemaVersion", 1, nullptr);
+    state.setProperty ("schemaVersion", 2, nullptr);
     juce::ValueTree learned ("LEARNED");
     learned.setProperty ("sampleRate", lastSerializedLearnedState.sampleRate, nullptr);
     learned.setProperty ("noiseReady", lastSerializedLearnedState.noiseReady, nullptr);
@@ -353,6 +368,22 @@ void SculptLiveCleanProcessor::setStateInformation (const void* data, int size)
                 child.setProperty ("value", range.snapToLegalValue (juce::jlimit (range.start, range.end, value)), nullptr);
             }
         }
+        // Version 0.1 projects predate Source Extractor. Missing new values
+        // must restore the safe defaults, even when loading into an instance
+        // whose extractor is currently enabled. APVTS otherwise retains them.
+        const std::array<const char*, 3> sourceIds { "sourceThreshold", "sourceDepth", "sourceEnabled" };
+        const std::array<float, 3> sourceDefaults { -32.0f, 50.0f, 0.0f };
+        for (std::size_t index = 0; index < sourceIds.size(); ++index)
+        {
+            if (! state.getChildWithProperty ("id", sourceIds[index]).isValid())
+            {
+                juce::ValueTree parameterState ("PARAM");
+                parameterState.setProperty ("id", sourceIds[index], nullptr);
+                parameterState.setProperty ("value", sourceDefaults[index], nullptr);
+                state.addChild (parameterState, -1, nullptr);
+            }
+        }
+        state.setProperty ("schemaVersion", 2, nullptr);
         apvts.replaceState (state);
         lastSerializedLearnedState = restored;
         pendingLearnedState.store (restored,

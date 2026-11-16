@@ -21,12 +21,13 @@ struct Instance {
 };
 std::uint32_t seed = 0x12345678;
 float noise() { seed ^= seed<<13; seed ^= seed>>17; seed ^= seed<<5; return (static_cast<float>(seed>>8)/8388608.0f-1.0f)*0.03f; }
-struct Result { int instances; bool automatic; double mean, p99, maximum; int notches; double cpuMean, cpuP99, cpuMax; };
-Result measure(int count, bool automatic) {
+struct Result { int instances; bool automatic; bool sourceEnabled; double mean, p99, maximum; int notches; double cpuMean, cpuP99, cpuMax; };
+Result measure(int count, bool automatic, bool sourceEnabled) {
     std::vector<std::unique_ptr<Instance>> instances;
     for (int i=0;i<count;++i) {
         auto x=std::make_unique<Instance>();
         sculptliveclean::Parameters p; p.denoise=0.75f; p.dereverb=0.5f; p.defeedback=1; p.feedbackHold=!automatic;
+        p.sourceEnabled=sourceEnabled; p.sourceThresholdDb=-24.0f; p.sourceDepth=0.5f;
         x->engine.setParameters(p); x->engine.prepare(sampleRate,blockSize,2);
         x->engine.requestNoiseLearn();
         for (int n=0;n<760;++n) {
@@ -66,7 +67,7 @@ Result measure(int count, bool automatic) {
     for(double v:cpuTimings)cpuMean+=v;
     cpuMean/=cpuTimings.size();
     std::sort(cpuTimings.begin(),cpuTimings.end());
-    return {count,automatic,mean,timings[static_cast<std::size_t>(0.99*(timings.size()-1))],timings.back(),instances[0]->engine.getMeters().activeNotches,cpuMean,cpuTimings[static_cast<std::size_t>(0.99*(cpuTimings.size()-1))],cpuTimings.back()};
+    return {count,automatic,sourceEnabled,mean,timings[static_cast<std::size_t>(0.99*(timings.size()-1))],timings.back(),instances[0]->engine.getMeters().activeNotches,cpuMean,cpuTimings[static_cast<std::size_t>(0.99*(cpuTimings.size()-1))],cpuTimings.back()};
 }
 }
 int main(int argc,char**argv) {
@@ -74,20 +75,21 @@ int main(int argc,char**argv) {
     std::ofstream out(destination);
     if(!out){std::cerr<<"Cannot write benchmark\n";return 1;}
     out<<std::fixed<<std::setprecision(4);
-    out<<"{\n  \"sampleRate\":48000,\n  \"blockSize\":128,\n  \"channels\":2,\n  \"blockBudgetMicroseconds\":2666.6667,\n  \"method\":\"Serial independent stereo instances, learned noise and active notches, input generation excluded, 1500 measured callbacks; wall time on this host only\",\n  \"results\":[\n";
+    out<<"{\n  \"version\":\"0.2.0\",\n  \"sampleRate\":48000,\n  \"blockSize\":128,\n  \"channels\":2,\n  \"blockBudgetMicroseconds\":2666.6667,\n  \"sourceThresholdDb\":-24,\n  \"sourceDepthPercent\":50,\n  \"method\":\"Serial independent stereo instances, learned noise and active notches, source off/on, input generation excluded, 1500 measured callbacks; wall time on this host only\",\n  \"results\":[\n";
     bool first=true;
-    for(bool automatic:{false,true})for(int count:{1,8,16}) {
-        const auto r=measure(count,automatic);
+    for(bool automatic:{false,true})for(int count:{1,8,16})for(bool sourceEnabled:{false,true}) {
+        const auto r=measure(count,automatic,sourceEnabled);
         if(!first)out<<",\n";
         first=false;
         out<<"    {\"instances\":"<<r.instances<<",\"mode\":\""<<(r.automatic?"Auto":"Hold")
-           <<"\",\"activeNotchesPerInstance\":"<<r.notches<<",\"meanMicroseconds\":"<<r.mean
+           <<"\",\"sourceEnabled\":"<<(r.sourceEnabled?"true":"false")
+           <<",\"activeNotchesPerInstance\":"<<r.notches<<",\"meanMicroseconds\":"<<r.mean
            <<",\"p99Microseconds\":"<<r.p99<<",\"maximumMicroseconds\":"<<r.maximum
            <<",\"meanPercentOfBlockBudget\":"<<r.mean/26.6666667
            <<",\"p99PercentOfBlockBudget\":"<<r.p99/26.6666667
            <<",\"meanCpuMicroseconds\":"<<r.cpuMean<<",\"p99CpuMicroseconds\":"<<r.cpuP99
            <<",\"maxCpuMicroseconds\":"<<r.cpuMax<<",\"meanCpuPercentOfBlockBudget\":"<<r.cpuMean/26.6666667<<"}";
-        std::cout<<count<<" stereo / "<<(automatic?"Auto":"Hold")<<": mean "<<r.mean
+        std::cout<<count<<" stereo / "<<(automatic?"Auto":"Hold")<<" / Source "<<(sourceEnabled?"on":"off")<<": mean "<<r.mean
                  <<" us, p99 "<<r.p99<<" us, max "<<r.maximum<<" us; CPU mean "<<r.cpuMean<<" us\n";
     }
     out<<"\n  ]\n}\n";

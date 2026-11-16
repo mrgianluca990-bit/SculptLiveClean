@@ -194,6 +194,7 @@ void testLearnedRecallAndValidation() {
 }
 void testBypassAndStereo() {
     Parameters p; p.denoise = p.dereverb = p.defeedback = 1; p.outputGain = 1.6f;
+    p.sourceEnabled = true; p.sourceThresholdDb = -20.0f; p.sourceDepth = 0.75f;
     LiveCleanEngine e; setup(e, p); learn(e);
     p.bypass = true; e.setParameters(p); auto warm = white(0.1); run(e, warm);
     auto a = white(0.4); const auto original = a; run(e, a);
@@ -204,6 +205,7 @@ void testBypassAndStereo() {
 }
 void testBlockIndependence() {
     Parameters p = neutral(); p.dereverb = 0.6f;
+    p.sourceEnabled = true; p.sourceThresholdDb = -20.0f; p.sourceDepth = 0.75f;
     LiveCleanEngine a, b; setup(a, p); setup(b, p);
     auto x = white(0.7); auto y = x;
     run(a, x, 1); run(b, y, 257);
@@ -212,6 +214,7 @@ void testBlockIndependence() {
 void testRatesStabilityAndBadInput() {
     for (double sr : {8000.0, 44100.0, 192000.0, 384000.0}) {
         Parameters p; p.denoise = p.dereverb = p.defeedback = 1; p.feedbackHold = false;
+        p.sourceEnabled = true; p.sourceThresholdDb = -24.0f; p.sourceDepth = 1.0f;
         LiveCleanEngine e; setup(e, p, sr);
         auto a = white(0.08, sr, 1.0f);
         a.l[10] = std::numeric_limits<float>::quiet_NaN();
@@ -227,6 +230,7 @@ void testRatesStabilityAndBadInput() {
 }
 void testNoAllocations() {
     Parameters p; p.feedbackHold = false;
+    p.sourceEnabled = true; p.sourceThresholdDb = -24.0f; p.sourceDepth = 0.5f;
     LiveCleanEngine e; setup(e, p);
     auto state = e.getLearnedState(); state.feedbackFrequencies = {550, 997, 1901, 3400, 5100, 7500}; state.activeNotches = 6;
     std::array<float,128> l{}, r{}; float* ptrs[]{l.data(),r.data()};

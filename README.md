@@ -1,14 +1,29 @@
-# Sculpt Live Clean 0.1.0
+# Sculpt Live Clean 0.2.0
 
-Effetto VST3 mono/stereo per la pulizia del segnale dal vivo, con tre controlli:
-**Denoise, Dereverb, Defeedback**. Interfaccia Sculpt scura, indicatori di ingresso,
-uscita e riduzione, trim di uscita e bypass. Prima versione da verificare nel
+Effetto VST3 mono/stereo per la pulizia del segnale dal vivo, con
+**Denoise, Dereverb, Defeedback e Source Extractor**. Il nuovo Source Extractor
+deriva dal Source Enhancer di Sculpt CH Strip, con la stessa curva e gli stessi
+tempi di intervento. Interfaccia Sculpt scura, indicatori di ingresso,
+uscita e riduzione, trim di uscita e bypass. Versione da verificare nel
 proprio sistema live prima dell'impiego in spettacolo.
 
 Il progetto privilegia costo di calcolo contenuto e nessuna attesa a blocchi
 nel percorso audio. Denoise e riduzione delle code condividono una banca di
 12 bande IIR; l'antifeedback usa al massimo sei filtri notch. Non contiene
 modelli neurali, convoluzione o oversampling del percorso audio.
+Source Extractor usa un solo rilevatore e un guadagno collegato per i canali
+stereo. I coefficienti temporali costanti sono calcolati nella preparazione,
+senza ricalcolarli per ogni campione. Quando è spento e la transizione è
+terminata, sospende il calcolo dell'inviluppo e del guadagno.
+
+## Aggiornamento dalla 0.1.0
+
+Sostituisci i file del pacchetto di aggiornamento mantenendo i percorsi.
+La cartella deve chiamarsi `.github/workflows`, con la **s** finale.
+Gli ID dei parametri esistenti restano invariati; i tre nuovi parametri
+sono aggiunti in fondo. Aprendo un progetto 0.1.0, Source Extractor viene
+impostato su **Off**, Threshold **−32 dBFS**, Depth **50%**. Il profilo del
+rumore e i notch salvati continuano a essere richiamati.
 
 ## Uso rapido
 
@@ -23,13 +38,48 @@ modelli neurali, convoluzione o oversampling del percorso audio.
    Quando sono state individuate le frequenze problematiche, torna su **Hold**.
    I sei riquadri mostrano le frequenze acquisite. **Reset** cancella questi
    filtri con una transizione graduale.
+6. Per ridurre i rientri nelle pause, attiva **Source On**. Parti da Depth
+   25–50% e regola **Threshold** ascoltando le parti più deboli della voce o
+   dello strumento: la riduzione deve aumentare soprattutto quando la
+   sorgente si ferma. Confronta con **Source Off**.
 
 Queste percentuali sono punti di partenza, non impostazioni universali.
 Il preset iniziale è Denoise 25%, Dereverb 15%, Defeedback 50%, output 0 dB,
-Hold attivo. Denoise resta trasparente finché non acquisisci un profilo;
+Hold attivo, Source Off con Threshold −32 dBFS e Depth 50%.
+Denoise resta trasparente finché non acquisisci un profilo;
 Defeedback in Hold con zero frequenze acquisite non applica notch.
 
-## Cosa fanno i tre controlli
+## Cosa fanno i quattro moduli
+
+### Source Extractor — dalla Sculpt CH Strip
+
+È un expander progressivo collegato in stereo: attenua il segnale quando
+il livello scende sotto soglia, con passaggio morbido e chiusura lenta.
+Non richiede apprendimento. Non separa due sorgenti contemporanee: quando
+voce e rientri sono presenti insieme, rimangono nello stesso segnale.
+
+- **Threshold:** da −60 a 0 dBFS, valore iniziale −32 dBFS.
+- **Depth:** 0–100%, limite di attenuazione da 0 a 48 dB. 50% permette
+  fino a 24 dB; la riduzione effettiva dipende dal livello rispetto alla soglia.
+- **Source On/Off:** attiva o disattiva il modulo con transizione smussata.
+- **Riduzione:** indica l'attenuazione applicata in dB.
+
+La curva è quella del Source Enhancer originale, compreso il ginocchio
+morbido di 6 dB. Sono conservati il decadimento del rilevatore di 5 ms,
+la riapertura di 2 ms, il mantenimento di 60 ms, la chiusura di 180 ms e
+l'isteresi di 2 dB. I controlli seguono una transizione di 20 ms. Questi sono
+tempi di reazione, non buffer di attesa audio.
+
+Il rilevatore legge l'ingresso originale; il guadagno viene applicato dopo
+Denoise/Dereverb/Defeedback e prima di Output. Modificare gli altri trattamenti
+non sposta quindi la soglia del Source. Il collegamento stereo usa il massimo
+dei due livelli, anche con segnali in opposizione di fase. Depth a zero e
+Source Off tornano al percorso neutro dopo la transizione.
+
+Il codice di riferimento proviene da `crates/sculpt-strip/src/processor.rs`
+del progetto SculptDAW, commit `081a7b851b9ebb41fa8c53d7f2335f0abe007b36`.
+Provenienza, adattamenti e attribuzioni sono in
+`ThirdParty/SourceExtractor-NOTICE.txt`.
 
 ### Denoise
 
@@ -82,10 +132,12 @@ di fase dei filtri IIR. Il tempo necessario per riconoscere un innesco è un
 tempo di reazione del rilevatore, distinto dal ritardo del percorso audio.
 
 Il bypass sfuma in 5 ms fino al dry esatto, mantenendo gli stati pronti.
-Con tutti i trattamenti a zero e output a 0 dB, il percorso è neutro esatto.
+Con tutti i trattamenti a zero, Source Off e output a 0 dB, il percorso è
+neutro esatto.
 
 Il progetto DAW salva le manopole, Auto/Hold, bypass, profilo del rumore e
-frequenze antifeedback. Le richieste Learn/Reset passano all'audio senza
+frequenze antifeedback e impostazioni del Source Extractor.
+Le richieste Learn/Reset passano all'audio senza
 mutex nel callback. Le frequenze richiamate entrano gradualmente.
 Se cambia il sample rate, il vecchio profilo del rumore viene invalidato:
 la UI richiede un nuovo Learn. I notch validi vengono mantenuti.
@@ -112,6 +164,8 @@ macOS VST3 → Run workflow**. L'avvio manuale richiede che il file sia presente
 nel branch predefinito. Al termine di una compilazione riuscita scarica
 **Sculpt-Live-Clean-macOS-VST3**. È disponibile anche il rapporto CPU generato
 sul runner Mac nell'artefatto **Sculpt-Live-Clean-verifiche**.
+La build esegue anche i controlli JUCE di salvataggio/richiamo, migrazione
+dei progetti 0.1.0, conservazione del profilo/notch e bypass dell'host.
 
 Questo pacchetto contiene sorgenti e configurazione, non un binario macOS
 già compilato. Il workflow produce un VST3 universale Apple Silicon/Intel,
@@ -147,7 +201,8 @@ bash tools/run-benchmark.sh
 
 Il secondo comando genera `build-benchmark/cpu-benchmark.json`. Misura 1, 8
 e 16 istanze stereo a 48 kHz / 128 campioni, con profilo acquisito, trattamenti
-attivi e notch già inseriti, in Hold e Auto. Include media, 99° percentile,
+attivi e notch già inseriti, in Hold e Auto, confrontando Source Off e On
+(Threshold −24 dBFS, Depth 50%). Include media, 99° percentile,
 massimo e tempo CPU del processo. Il budget per un blocco è 2666,67 µs.
 
 Le misure locali di questa consegna provengono da Linux in un ambiente
@@ -161,6 +216,8 @@ utilizzabile. Non viene nascosto il caso peggiore dietro la sola media.
 
 JUCE 8.0.4 e termini: `ThirdParty/JUCE-8.0.4-LICENSE.md`.
 Il nucleo DSP non richiede altre librerie esterne.
+Source Enhancer Sculpt e gain computer derivato da SoundCraft:
+`ThirdParty/SourceExtractor-NOTICE.txt` e licenze SoundCraft incluse.
 
 Formule biquad, Robert Bristow-Johnson / W3C Audio EQ Cookbook:
 https://www.w3.org/TR/audio-eq-cookbook/
