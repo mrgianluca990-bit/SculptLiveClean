@@ -1,0 +1,16 @@
+PASS: neutral, mono/stereo, zero buffering delay
+Noise-only attenuation: -11.970 dB
+PASS: learned denoise and dominant-tone retention
+Dereverb direct onset: 0.000 dB; decay: -8.904 dB
+PASS: late decay reduction and onset protection
+Feedback 44100.000 Hz / anti-phase stereo: -11.999 dB
+Feedback 48000.000 Hz / anti-phase stereo: -11.999 dB
+Feedback 96000.000 Hz / anti-phase stereo: -11.997 dB
+PASS: feedback, anti-phase stereo, Hold and Clear
+PASS: harmonic material guard
+PASS: learned state recall and validation
+PASS: bypass and linked stereo
+PASS: block-size independence
+PASS: sample rates, reset and nonfinite input
+PASS: no audio-thread allocations
+All 10 Sculpt Live Clean core checks passed.

@@ -1,0 +1,74 @@
+{
+  "syntaxCheck": {
+    "command": "c++ -std=c++17 -fsyntax-only -Wall -Wextra -Wpedantic -Werror -DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1 -DJUCE_WEB_BROWSER=0 -DJUCE_USE_CURL=0 -Iqa/JUCE-8.0.4/modules SculptLiveClean/Source/PluginProcessor.cpp SculptLiveClean/Source/PluginEditor.cpp",
+    "exitCode": 0,
+    "output": "",
+    "scope": "Actual JUCE 8.0.4 headers and actual engine headers. No plugin linking or native macOS build."
+  },
+  "juceCommit": "51d11a2be6d5c97ccf12b4e5e827006e19f0555a",
+  "bashSyntax": "PASS",
+  "workflowYaml": "PASS",
+  "nativeCpuReport": "Workflow measures DSP on its macOS runner before plugin build; always attempts upload of docs/cpu-macos-benchmark.json as Sculpt-Live-Clean-verifiche. Native benchmark not executed here.",
+  "layout": {
+    "size": [
+      800,
+      460
+    ],
+    "mainKnobs": [
+      [
+        62,
+        100,
+        156,
+        156
+      ],
+      [
+        322,
+        100,
+        156,
+        156
+      ],
+      [
+        582,
+        100,
+        156,
+        156
+      ]
+    ],
+    "panelBounds": [
+      [
+        20,
+        64,
+        240,
+        296
+      ],
+      [
+        280,
+        64,
+        240,
+        296
+      ],
+      [
+        540,
+        64,
+        240,
+        296
+      ]
+    ],
+    "repaintHz": 25
+  },
+  "stateHandoff": "LearnedState fields are atomics; sequence fence snapshots carry matching Clear/Learn/restore acknowledgements. Audio takes one bounded attempt, no mutex. State XML callbacks only serialize with their own mutex and bounded snapshot retries. UI commands survive stopped-host save/reprepare, save overlays pending user intent. Learned noise profile and target notch frequencies persist. Preset restore supersedes pending Clear/Learn commands that preceded it; later UI requests remain pending. Two published slots retain a completed snapshot during audio publication/preemption; acquire/release completed-slot index selects it.",
+  "files": {
+    "Source/PluginProcessor.h": "7891e21d5892055101895fd67c8a952ad19ab523734463a347cfaf0319e5a2f4",
+    "Source/PluginProcessor.cpp": "66e7b4b76f4977a1f6f10c231d1651b55bb98af29004a2a0edc9001efe5c087a",
+    "Source/PluginEditor.h": "70d587500ce20484a30f342fb59a817fda806ef17e066fc6a4de3f7688e9cdd7",
+    "Source/PluginEditor.cpp": "7d555de508a64d10b962ea990e248c16726439f64f2ad244399a4f9ca48bf806",
+    "Source/LiveCleanEngine.h": "96b8741e77f4e8c02e3efc9bb9805afb753ac249d2240fc4154e692784e00ef7",
+    "Source/FeedbackSuppressor.h": "c184d283d858520463eb27d3799edfface71b9b210b4630381c95abdc89ffd6b",
+    "CMakeLists.txt": "417e431fd258ae5024897724900675ff5095e66037b9693bb17d39020e318d78",
+    ".github/workflows/build-macos-vst3.yml": "ff74c321a5e156496298fee590fbd573a4d5b4b5c93083aa72c837998e95c5b7",
+    "tools/build-macos.sh": "e3397f32cafb15591cdd0d0155161617f5ebd98d0fc717e89128d831b292c64d",
+    "tools/test-core.sh": "20dbddb36213f2356320c0ee5097439158889324eca34a34e9f4e06debf89889",
+    "tools/run-benchmark.sh": "4a4f55ddae63b339a630057e491fe45eb3c973162f858b2a06cca8649f552f87",
+    "ThirdParty/JUCE-8.0.4-LICENSE.md": "8c596884d914de7ae9fc33b407e22752ded6dd65df3e323c568479d38e138a46"
+  }
+}

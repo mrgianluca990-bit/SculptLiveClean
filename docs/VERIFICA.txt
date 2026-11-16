@@ -1,0 +1,68 @@
+SCULPT LIVE CLEAN 0.1.0 — VERIFICA DEL MOTORE
+Data: 16 novembre 2026.
+
+ESITO FUNZIONALE
+10 controlli del nucleo DSP C++17: PASS, con -O2 -Wall -Wextra
+-Wpedantic -Werror. Log completo in core-tests.txt.
+
+Controllati: percorso neutro mono/stereo esatto, impulso senza ritardo a
+blocchi, denoise prima/dopo apprendimento, protezione di un tono dominante,
+attenuazione di una coda esponenziale e conservazione dell'attacco,
+antifeedback con segnale stereo in opposizione di fase, Auto/Hold/Reset,
+fixture musicale armonica, salvataggio/richiamo dello stato appreso,
+richiamo immediato e intenzione Clear prima della fine della sfumatura,
+validazione dati e cambio sample rate, bypass e stereo link,
+indipendenza dal blocco host, stabilità da 8 a 384 kHz e input non finiti.
+Nessuna allocazione C++ rilevata nel test strumentato del percorso audio.
+
+MISURE SU SEGNALI SINTETICI CONTROLLATI
+- Denoise massimo, rumore bianco dopo Learn: circa -11,970 dB RMS.
+- Dereverb massimo, coda esponenziale: circa -8,904 dB RMS.
+- Parte diretta del burst del test dereverb: variazione circa 0,000 dB.
+- Notch a 997 Hz con ingresso stereo in opposizione di fase:
+  circa -12 dB a 44,1/48/96 kHz.
+- Nessun notch aggiunto sulla fixture 330/660/990 Hz.
+Queste prove non dimostrano isolamento della voce su registrazioni reali
+né assenza di falsi riconoscimenti per qualunque materiale musicale.
+
+L'algoritmo di dereverb è una riduzione delle code tramite inviluppi per
+banda. Non ricostruisce una sorgente diretta coperta da riverbero sovrapposto.
+La latenza aggiunta dichiarata di 0 campioni riguarda il buffer audio:
+restano risposta di fase dei filtri, tempo di reazione del rilevatore e
+latenza della DAW/interfaccia.
+
+PROFILAZIONE LOCALE — ESITO NON CONCLUSIVO PER IL TEMPO REALE SU MAC
+Ambiente: Linux x86_64 condiviso; CPU esposta AMD EPYC 7763.
+Compilatore: GCC 14.2.0, -O3 -DNDEBUG. GUI e host DAW esclusi.
+Stereo 48 kHz, blocchi 128 campioni (budget 2666,67 microsecondi).
+Profilo rumore acquisito, Denoise 75%, Dereverb 50%, Defeedback 100%.
+Hold: sei notch; Auto: quattro notch e posti liberi, FFT attiva.
+1500 callback misurati per condizione; generazione input fuori cronometro.
+Media/99o percentile/massimo includono la variabilità di questo ambiente.
+
+1 istanze, Hold: media 45.10 us; p99 194.09 us; massimo 1131.37 us; CPU media 46.12 us.
+8 istanze, Hold: media 339.30 us; p99 739.82 us; massimo 1918.34 us; CPU media 340.24 us.
+16 istanze, Hold: media 1567.92 us; p99 21099.06 us; massimo 88090.34 us; CPU media 1573.23 us.
+1 istanze, Auto: media 63.02 us; p99 292.83 us; massimo 5849.12 us; CPU media 63.82 us.
+8 istanze, Auto: media 863.06 us; p99 10222.43 us; massimo 74495.95 us; CPU media 865.43 us.
+16 istanze, Auto: media 1219.73 us; p99 7700.33 us; massimo 41991.46 us; CPU media 1220.53 us.
+
+La singola istanza ha mostrato medie di circa 45–63 microsecondi per blocco,
+ma le prove con più istanze presentano outlier oltre il budget. Non sono
+una certificazione di funzionamento senza dropout, né una misura della CPU
+nel Mac dell'utilizzatore. Il rapporto grezzo completo, senza eliminazione
+degli outlier, è cpu-benchmark.json. Il workflow esegue lo stesso benchmark
+sul runner macOS e pubblica il rapporto; tools/run-benchmark.sh consente
+la prova locale sul proprio Mac. Il numero di istanze live va stabilito
+con la propria DAW, routing, buffer e interfaccia.
+
+SCOPE DELLA CONSEGNA
+Sorgenti del VST3 macOS, GUI, workflow e script di compilazione. In questo
+ambiente non sono stati eseguiti il linking macOS, la scansione VST3 o una
+prova con microfoni e PA reali. Processor/Editor vengono controllati contro
+i veri header JUCE 8.0.4 con warning trattati come errori; il report della
+verifica sintattica è wrapper-verification.json.
+
+IMPRONTE DEI DUE HEADER DSP
+96b8741e77f4e8c02e3efc9bb9805afb753ac249d2240fc4154e692784e00ef7  Source/LiveCleanEngine.h
+c184d283d858520463eb27d3799edfface71b9b210b4630381c95abdc89ffd6b  Source/FeedbackSuppressor.h

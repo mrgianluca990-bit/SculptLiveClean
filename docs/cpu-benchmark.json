@@ -1,0 +1,15 @@
+{
+  "sampleRate":48000,
+  "blockSize":128,
+  "channels":2,
+  "blockBudgetMicroseconds":2666.6667,
+  "method":"Serial independent stereo instances, learned noise and active notches, input generation excluded, 1500 measured callbacks; wall time on this host only",
+  "results":[
+    {"instances":1,"mode":"Hold","activeNotchesPerInstance":6,"meanMicroseconds":45.0976,"p99Microseconds":194.0940,"maximumMicroseconds":1131.3700,"meanPercentOfBlockBudget":1.6912,"p99PercentOfBlockBudget":7.2785,"meanCpuMicroseconds":46.1193,"p99CpuMicroseconds":204.0000,"maxCpuMicroseconds":1134.0000,"meanCpuPercentOfBlockBudget":1.7295},
+    {"instances":8,"mode":"Hold","activeNotchesPerInstance":6,"meanMicroseconds":339.2976,"p99Microseconds":739.8160,"maximumMicroseconds":1918.3360,"meanPercentOfBlockBudget":12.7237,"p99PercentOfBlockBudget":27.7431,"meanCpuMicroseconds":340.2440,"p99CpuMicroseconds":742.0000,"maxCpuMicroseconds":1920.0000,"meanCpuPercentOfBlockBudget":12.7591},
+    {"instances":16,"mode":"Hold","activeNotchesPerInstance":6,"meanMicroseconds":1567.9236,"p99Microseconds":21099.0550,"maximumMicroseconds":88090.3350,"meanPercentOfBlockBudget":58.7971,"p99PercentOfBlockBudget":791.2146,"meanCpuMicroseconds":1573.2293,"p99CpuMicroseconds":21460.0000,"maxCpuMicroseconds":88094.0000,"meanCpuPercentOfBlockBudget":58.9961},
+    {"instances":1,"mode":"Auto","activeNotchesPerInstance":4,"meanMicroseconds":63.0233,"p99Microseconds":292.8290,"maximumMicroseconds":5849.1250,"meanPercentOfBlockBudget":2.3634,"p99PercentOfBlockBudget":10.9811,"meanCpuMicroseconds":63.8227,"p99CpuMicroseconds":300.0000,"maxCpuMicroseconds":5852.0000,"meanCpuPercentOfBlockBudget":2.3933},
+    {"instances":8,"mode":"Auto","activeNotchesPerInstance":4,"meanMicroseconds":863.0553,"p99Microseconds":10222.4350,"maximumMicroseconds":74495.9520,"meanPercentOfBlockBudget":32.3646,"p99PercentOfBlockBudget":383.3413,"meanCpuMicroseconds":865.4287,"p99CpuMicroseconds":10227.0000,"maxCpuMicroseconds":74499.0000,"meanCpuPercentOfBlockBudget":32.4536},
+    {"instances":16,"mode":"Auto","activeNotchesPerInstance":4,"meanMicroseconds":1219.7267,"p99Microseconds":7700.3320,"maximumMicroseconds":41991.4630,"meanPercentOfBlockBudget":45.7398,"p99PercentOfBlockBudget":288.7624,"meanCpuMicroseconds":1220.5347,"p99CpuMicroseconds":7704.0000,"maxCpuMicroseconds":41995.0000,"meanCpuPercentOfBlockBudget":45.7700}
+  ]
+}
