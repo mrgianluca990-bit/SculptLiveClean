@@ -1,0 +1,48 @@
+name: Build macOS VST3
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sculpt-live-clean-macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Universal macOS VST3
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify live DSP engine
+        run: bash tools/test-core.sh
+
+      - name: Measure DSP cost on the macOS runner
+        run: bash tools/run-benchmark.sh docs/cpu-macos-benchmark.json
+
+      - name: Build, verify architecture and sign ad-hoc
+        run: bash tools/build-macos.sh
+
+      - name: Upload VST3 archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sculpt-Live-Clean-macOS-VST3
+          path: dist/Sculpt-Live-Clean-macOS-VST3.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload native CPU measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sculpt-Live-Clean-verifiche
+          path: docs/cpu-macos-benchmark.json
+          if-no-files-found: warn
+          retention-days: 14
